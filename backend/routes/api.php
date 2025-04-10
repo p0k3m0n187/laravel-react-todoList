@@ -14,8 +14,4 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::get('/tasks/{id}', [TaskController::class, 'show']); // View a specific task
     Route::put('/tasks/{id}', [TaskController::class, 'update']); // Update a specific task
     Route::delete('/tasks/{id}', [TaskController::class, 'delete']); // Delete a specific task
-
-    // AssignedTask routes
-    Route::get('/assigned-tasks', [AssignedTaskController::class, 'index']); // List all assigned tasks
-    Route::post('/assigned-tasks', [AssignedTaskController::class, 'create']); // Assign a user to a task
 });
