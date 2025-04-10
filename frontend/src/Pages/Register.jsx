@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Box } from '@mui/material';
 import BoxCont from '../component/atom/boxCont';
 import CustomTextField from '../component/atom/customTextField';
 import ButtonGrad from '../component/atom/buttonGrad';
@@ -13,7 +12,7 @@ const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
-    const [error, setError] = useState(null);
+    const setError = useState(null);
     const [submitted, setSubmitted] = useState(false); // Track form submission
     const navigate = useNavigate(); // Initialize useNavigate
 

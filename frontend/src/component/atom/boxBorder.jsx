@@ -10,7 +10,7 @@ function BoxBorder({ children }) {
             height: '100%',
             p: 4,
         }}>
-            {children} {/* Renders whatever is passed as children */}
+            {children}
         </Box>
     );
 }

@@ -9,7 +9,7 @@ const BoxCont = ({ children, sx = {}, ...props }) => {
             alignItems="center"
             justifyContent="center"
             width='100%'
-            sx={{ ...sx }}
+            sx={{ ...sx, }}
             {...props}
         >
             {children}

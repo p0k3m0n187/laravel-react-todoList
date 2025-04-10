@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, } from "react-router-dom";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 import Tasks from "./Pages/Tasks";
-import AddUpdateTask from "./component/addUpdateTask";
 import { Container, Box, CssBaseline } from "@mui/material";
+import NavBar from "./component/molecule/Navbar";
+
+// A wrapper component to use useLocation inside Router
+function AppWrapper() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || null);
@@ -17,9 +26,11 @@ function App() {
     }
   }, [token]);
 
+
   return (
-    <Router>
-      <CssBaseline /> {/* Normalize styling across browsers */}
+    <>
+      <CssBaseline />
+      <NavBar token={token} setToken={setToken} />
       <Container maxWidth="md">
         <Box
           sx={{
@@ -35,14 +46,12 @@ function App() {
             <Route path="/login" element={<Login setToken={setToken} />} />
             <Route path="/register" element={<Register />} />
             <Route path="/tasks" element={<Tasks token={token} />} />
-            <Route path="/add-task" element={<AddUpdateTask token={token} />} />
-            <Route path="/update-task/:taskId" element={<AddUpdateTask token={token} />} />
             <Route path="/" element={<div>Welcome to the App!</div>} />
           </Routes>
         </Box>
       </Container>
-    </Router>
+    </>
   );
 }
 
-export default App;
+export default AppWrapper;
