@@ -4,62 +4,76 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
-    //
+    // Shows all tasks
     public function index()
     {
-        $task = Task::all();
-        return response()->json($task);
+        $tasks = Task::all();  // Fetch all tasks (corrected variable name to 'tasks')
+        return response()->json($tasks);  // Return tasks as JSON
     }
 
+    // Creates a new task
     public function store(Request $request)
     {
+        // Check if the user is authenticated
+        if (!Auth::check()) {
+            return response()->json(['message' => 'User not authenticated'], 401);
+        }
+
+        // Validate the required fields
         $validate = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'status' => 'required|in:pending,in_progress,completed',
             'start_date' => 'nullable|date_format:Y-m-d H:i:s',
             'end_date' => 'nullable|date_format:Y-m-d H:i:s',
-            'user_id' => 'required|exists:users,id',
         ]);
 
+        // Automatically assign the authenticated user's ID
+        $validate['user_id'] = Auth::id();  // Get the user ID of the currently authenticated user
+
+        // Create the task
         $task = Task::create($validate);
-        return response()->json($task, 201);
+
+        return response()->json($task, 201);  // Return the created task with a 201 status
     }
 
-    //shows specific task
-
+    // Shows a specific task
     public function show($id)
     {
-        $task = Task::findOrFail($id);
-        return response()->json($task);
+        $task = Task::findOrFail($id);  // Find the task by ID, or fail with 404
+        return response()->json($task);  // Return the task as JSON
     }
 
-    //updates specific task
+    // Updates a specific task
     public function update(Request $request, $id)
     {
-        $task = Task::findOrFail($id);
+        $task = Task::findOrFail($id);  // Find the task by ID, or fail with 404
+
+        // Validate input fields (marking user_id as optional in case it's not being updated)
         $validate = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|required|string',
             'status' => 'sometimes|required|in:pending,in_progress,completed',
-            'start_date' => 'sometimes|nullable|date',
-            'end_date' => 'sometimes|nullable|date',
-            'user_id' => 'sometimes|required|exists:users,id',
+            'start_date' => 'nullable|date_format:Y-m-d\TH:i', // Allow the datetime-local format
+            'end_date' => 'nullable|date_format:Y-m-d\TH:i',   // Allow the datetime-local format
         ]);
 
+        // Update the task with validated data
         $task->update($validate);
-        return response()->json($task);
+
+        return response()->json($task);  // Return updated task as JSON
     }
 
-    //deletes specific task
+    // Deletes a specific task
     public function delete($id)
     {
-        $task = Task::findOrFail($id);
-        $task->delete();
+        $task = Task::findOrFail($id);  // Find the task by ID, or fail with 404
+        $task->delete();  // Delete the task
 
-        return response()->json(['message' => 'Task Deleted Successfuly!']);
+        return response()->json(['message' => 'Task Deleted Successfully!']);  // Success message
     }
 }

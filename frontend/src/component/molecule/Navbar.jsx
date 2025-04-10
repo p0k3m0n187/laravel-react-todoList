@@ -19,7 +19,7 @@ export default function Navbar({ token, setToken }) {
             component="div"
             sx={{ flexGrow: 1 }}
           >
-            {token ? "Task Manager" : "Software Engineer Exam"}
+            {token ? "Task Manager" : "Welcome"}
           </Typography>
 
           {!token ? (

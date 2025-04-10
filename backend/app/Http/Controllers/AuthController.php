@@ -17,14 +17,14 @@ class AuthController extends Controller
             'firstName' => 'required|string|max:50',
             'lastName' => 'required|string|max:50',
             'email' => 'required|string|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:6|confirmed|regex:/[@$!%*?&]/'
         ]);
 
         $user = User::create([
             'firstName' => $request->firstName,
             'lastName' => $request->lastName,
             'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'password' => Hash::make($request->password),
         ]);
 
         return response()->json([
@@ -36,24 +36,29 @@ class AuthController extends Controller
     // 🔓 Login
     public function login(Request $request)
     {
+        // Validate the request data
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return response()->json([
-                'message' => 'Login successful',
-                'token' => $token,
-            ]);
+        // Attempt to authenticate the user
+        if (!Auth::attempt($credentials)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        return response()->json(['message' => 'Invalid credentials'], 401);
-    }
+        // Retrieve the authenticated user
+        $user = Auth::user();
 
+        // Generate a new token for the user
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'token' => $token, // Bearer token for authentication
+            'user' => $user,   // Optional: Return user details
+        ]);
+    }
     // 🚪 Logout
     public function logout(Request $request)
     {

@@ -36,17 +36,17 @@ function App() {
           sx={{
             minHeight: "100vh",
             display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
             justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
             py: 2,
           }}
         >
           <Routes>
+            <Route path="/" element={<Login setToken={setToken} />} />
             <Route path="/login" element={<Login setToken={setToken} />} />
             <Route path="/register" element={<Register />} />
             <Route path="/tasks" element={<Tasks token={token} />} />
-            <Route path="/" element={<div>Welcome to the App!</div>} />
           </Routes>
         </Box>
       </Container>

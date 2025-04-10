@@ -12,7 +12,7 @@ const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
-    const setError = useState(null);
+    const [error, setError] = useState(null);  // Error state
     const [submitted, setSubmitted] = useState(false); // Track form submission
     const navigate = useNavigate(); // Initialize useNavigate
 
@@ -46,7 +46,19 @@ const Register = () => {
                 navigate('/login');
             }
         } catch (err) {
-            setError('There was an error during registration');
+            // Check for backend validation errors
+            if (err.response?.data?.errors) {
+                const errorMessages = err.response.data.errors;
+
+                // Display password-specific validation error
+                if (errorMessages.password) {
+                    setError(errorMessages.password[0]);  // Assuming the backend returns an array of error messages for the password field
+                } else {
+                    setError('There was an error during registration.');
+                }
+            } else {
+                setError('There was an error during registration.');
+            }
         }
     };
 
@@ -58,6 +70,7 @@ const Register = () => {
                     component="form"
                     onSubmit={handleRegister}>
                     <h2>Register</h2>
+
                     <CustomTextField
                         type="text"
                         label="First Name"
@@ -88,7 +101,18 @@ const Register = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         error={submitted && !password}
-                        helperText={submitted && !password ? "Password is required." : ""}
+                        helperText={
+                            submitted && !password
+                                ? "Password is required."
+                                : submitted && password && !/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/.test(password)
+                                    ? "Password must contain alphabets, numbers, and special characters."
+                                    : ""
+                        }
+                        FormHelperTextProps={{
+                            style: {
+                                color: 'red',  
+                            },
+                        }}
                     />
                     <CustomTextField
                         type="password"

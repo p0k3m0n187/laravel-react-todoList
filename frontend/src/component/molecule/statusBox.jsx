@@ -12,7 +12,6 @@ function StatusBox({ children, sx }) {
                 borderRadius: 1,
                 flex: 1,
                 minWidth: '250px',
-                minHeight: '500px',
                 padding: 1,
             }}>
                 {children}

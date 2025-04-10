@@ -19,7 +19,6 @@ const CustomTextField = ({
       type={type}
       required={required}
       variant="outlined"
-      // height = "15px"
       fullWidth
       sx={{
         mb: 2,

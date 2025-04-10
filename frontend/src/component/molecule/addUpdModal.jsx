@@ -3,9 +3,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
 import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Button, FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
-
+import { Button, FormControl, InputLabel, MenuItem, Select, TextField, Snackbar, Alert } from '@mui/material';
 
 const style = {
     position: 'absolute',
@@ -19,37 +17,32 @@ const style = {
     p: 4,
 };
 
-export default function AddUpdateModal({ open, handleClose, task }) {
+export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [status, setStatus] = useState('pending');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
-
-    const navigate = useNavigate();
-    const { taskId } = useParams();
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     // Effect to populate fields when a task is selected for updating
     useEffect(() => {
-        console.log('Task prop:', task); // Check if task is being passed correctly
         if (task) {
             setTitle(task.title);
             setDescription(task.description);
-            setStatus(task.status);
-            setStartDate(task.start_date?.slice(0, 16) || '');
-            setEndDate(task.end_date?.slice(0, 16) || '');
+            setStatus(task.status || 'pending'); // Ensure 'pending' as default if status is undefined
+            setStartDate(task.start_date?.slice(0, 16) || ''); // Check date format
+            setEndDate(task.end_date?.slice(0, 16) || ''); // Check date format
         } else {
-            // If no task, clear fields (add mode)
             setTitle('');
             setDescription('');
-            setStatus('pending');
+            setStatus('pending'); // Default to 'pending' if no task is selected
             setStartDate('');
             setEndDate('');
         }
     }, [task, open]);
-    
+
     const formatDate = (date, isUpdating) => {
         if (!date) return null;
         const formattedDate = new Date(date);
@@ -59,26 +52,27 @@ export default function AddUpdateModal({ open, handleClose, task }) {
         const hours = String(formattedDate.getHours()).padStart(2, '0');
         const minutes = String(formattedDate.getMinutes()).padStart(2, '0');
 
-        return `${year}-${month}-${day}T${hours}:${minutes}`; // "Y-m-d\TH:i"
+        return isUpdating
+            ? `${year}-${month}-${day}T${hours}:${minutes}`
+            : `${year}-${month}-${day} ${hours}:${minutes}:00`;
     };
 
-    const formattedStartDate = formatDate(startDate, taskId);
-    const formattedEndDate = formatDate(endDate, taskId);
+    const formattedStartDate = formatDate(startDate, task?.id);  // Check if task is valid
+    const formattedEndDate = formatDate(endDate, task?.id);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
         setSuccess(null);
 
-        const token = localStorage.getItem('token'); // Retrieve token from local storage
+        const token = localStorage.getItem('token');
 
         try {
             let response;
 
-            if (taskId) {
+            if (task?.id) {
                 // Update existing task
                 response = await axios.put(
-                    `http://127.0.0.1:8000/api/tasks/${taskId}`,
+                    `http://127.0.0.1:8000/api/tasks/${task.id}`,
                     {
                         title,
                         description,
@@ -92,6 +86,10 @@ export default function AddUpdateModal({ open, handleClose, task }) {
                         },
                     }
                 );
+
+                // Update tasks state optimistically
+                setTasks(prevTasks => prevTasks.map(t => (t.id === task.id ? response.data : t))); // Replace task
+
             } else {
                 // Add new task
                 response = await axios.post(
@@ -109,91 +107,111 @@ export default function AddUpdateModal({ open, handleClose, task }) {
                         },
                     }
                 );
+
+                // Add the new task optimistically
+                setTasks(prevTasks => [...prevTasks, response.data]); // Add new task to the list
             }
 
             if (response.status === 200 || response.status === 201) {
                 setSuccess('Task saved successfully!');
+                setSnackbarOpen(true);  // Open Snackbar on success
                 setTitle('');
                 setDescription('');
                 setStatus('pending');
                 setStartDate('');
                 setEndDate('');
-                navigate('/tasks');
+                handleClose(); // Close the modal
             }
         } catch (err) {
             console.error('Error saving task:', err);
-            if (err.response) {
-                console.log('Error response:', err.response.data);
-                setError(err.response.data.errors || 'Failed to save task. Please try again.');
-            } else {
-                setError('Failed to save task. Please try again.');
-            }
         }
     };
 
+    const handleSnackbarClose = () => {
+        setSnackbarOpen(false);  // Close Snackbar
+    };
+
     return (
-        <Modal open={open} onClose={handleClose}>
-            <Box sx={style}>
-                <Typography sx={{ mb: 3 }} variant="h6">{task ? 'Update Task' : 'Add Task'}</Typography>
+        <>
+            <Modal open={open} onClose={handleClose}>
+                <Box sx={style}>
+                    <Typography sx={{ mb: 3 }} variant="h6">{task ? 'Update Task' : 'Add Task'}</Typography>
 
-                {error && (
-                    <Typography sx={{ color: 'red', mb: 1 }}>
-                        {typeof error === 'object' ? JSON.stringify(error) : error}
-                    </Typography>
-                )}
-                {success && (
-                    <Typography sx={{ color: 'green', mb: 1 }}>{success}</Typography>
-                )}
-
-                <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <TextField
-                        label="Title"
-                        variant="outlined"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                    />
-                    <TextField
-                        label="Description"
-                        variant="outlined"
-                        multiline
-                        rows={3}
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        required
-                    />
-                    <FormControl fullWidth>
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                            value={status}
-                            label="Status"
-                            onChange={(e) => setStatus(e.target.value)}
+                    <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <TextField
+                            label="Title"
+                            variant="outlined"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             required
+                        />
+                        <TextField
+                            label="Description"
+                            variant="outlined"
+                            multiline
+                            rows={3}
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            required
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={status}
+                                label="Status"
+                                onChange={(e) => setStatus(e.target.value)}
+                                required
+                            >
+                                <MenuItem value="pending">Pending</MenuItem>
+                                <MenuItem value="in_progress">In Progress</MenuItem>
+                                <MenuItem value="completed">Completed</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="Start Date"
+                            type="datetime-local"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            InputLabelProps={{ shrink: true }}
+                        />
+                        <TextField
+                            label="Due Date"
+                            type="datetime-local"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            InputLabelProps={{ shrink: true }}
+                        />
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            sx={{
+                                backgroundColor:
+                                    status === 'pending'
+                                        ? 'red'            
+                                        : status === 'in_progress'
+                                            ? '#EAAE00'         
+                                            : status === 'completed'
+                                                ? 'green'           
+                                                : 'primary.main',   
+                            }}
                         >
-                            <MenuItem value="pending">Pending</MenuItem>
-                            <MenuItem value="in_progress">In Progress</MenuItem>
-                            <MenuItem value="completed">Completed</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <TextField
-                        label="Start Date"
-                        type="datetime-local"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        InputLabelProps={{ shrink: true }}
-                    />
-                    <TextField
-                        label="End Date"
-                        type="datetime-local"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        InputLabelProps={{ shrink: true }}
-                    />
-                    <Button type="submit" variant="contained" color="primary">
-                        {task ? 'Update Task' : 'Add Task'}
-                    </Button>
+                            {task ? 'Update Task' : 'Add Task'}
+                        </Button>
+
+                    </Box>
                 </Box>
-            </Box>
-        </Modal>
+            </Modal>
+
+            {/* Snackbar for success message */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={handleSnackbarClose}
+            >
+                <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
+                    {success}
+                </Alert>
+            </Snackbar>
+        </>
     );
 }
