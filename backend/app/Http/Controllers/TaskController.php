@@ -18,18 +18,18 @@ class TaskController extends Controller
     // Creates a new task
     public function store(Request $request)
     {
-        // Check if the user is authenticated
-        if (!Auth::check()) {
-            return response()->json(['message' => 'User not authenticated'], 401);
-        }
+        // // Check if the user is authenticated
+        // if (!Auth::check()) {
+        //     return response()->json(['message' => 'User not authenticated'], 401);
+        // }
 
         // Validate the required fields
         $validate = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'status' => 'required|in:pending,in_progress,completed',
-            'start_date' => 'nullable|date_format:Y-m-d H:i:s',
-            'end_date' => 'nullable|date_format:Y-m-d H:i:s',
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'status' => 'sometimes|required|in:pending,in_progress,completed',
+            'start_date' => 'nullable|date_format:Y-m-d H:i:s', // Correct format
+            'end_date' => 'nullable|date_format:Y-m-d H:i:s',   // Correct format
         ]);
 
         // Automatically assign the authenticated user's ID
