@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Box, Button, Snackbar, Tooltip, Typography } from '@mui/material';
-import StatusBox from '../component/molecule/statusBox'; // Import StatusBox component
+import { Alert, Box, Button, Snackbar, Tooltip, Typography, InputAdornment } from '@mui/material';
+import StatusBox from '../component/molecule/statusBox';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import VisibilityIcon from '@mui/icons-material/Edit';
 import ViewIcon from '@mui/icons-material/Visibility';
-import AddUpdateModal from '../component/molecule/addUpdModal'; // Import AddUpdateModal component
-import ViewTskMdl from '../component/molecule/viewTskMdl'; // Import viewTskMdl component
+import AddUpdateModal from '../component/molecule/addUpdModal';
+import ViewTskMdl from '../component/molecule/viewTskMdl';
+import CustomTextField from '../component/atom/customTextField';
+import SearchIcon from '@mui/icons-material/Search';
 
 function Tasks() {
     const [tasks, setTasks] = useState([]); // State to store tasks
+    const [searchQuery, setSearchQuery] = useState(''); // State for search query
     const navigate = useNavigate(); // Initialize useNavigate
     const [open, setOpen] = useState(false); // State to control modal visibility
     const [openView, setOpenView] = useState(false); // State to control view modal visibility
@@ -46,7 +49,6 @@ function Tasks() {
         fetchTasks();
     }, [navigate]); // Empty dependency array ensures this runs once when the component mounts
 
-    
     const handleDeleteTask = async (taskId) => {
         const confirmDelete = window.confirm('Are you sure you want to delete this task?');
 
@@ -92,19 +94,45 @@ function Tasks() {
         setOpenView(true); // Open the modal
     };
 
+    // Filter tasks based on their status and search query
+    const filteredTasks = tasks.filter((task) =>
+        task.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     // Filter tasks based on their status
-    const pendingTasks = tasks.filter(task => task.status === 'pending');
-    const inProgressTasks = tasks.filter(task => task.status === 'in_progress');
-    const completedTasks = tasks.filter(task => task.status === 'completed');
+    const pendingTasks = filteredTasks.filter(task => task.status === 'pending');
+    const inProgressTasks = filteredTasks.filter(task => task.status === 'in_progress');
+    const completedTasks = filteredTasks.filter(task => task.status === 'completed');
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Box>
-                    <Typography variant="h4"> Tasks </Typography>
-                </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Typography variant="h4"> Tasks </Typography>
+            </Box>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                mb: 1,
+                alignItems: 'center',
+            }}>
                 <Box>
                     <Button onClick={handleOpen} variant="contained" color="primary"> ADD TASK </Button>
+                </Box>
+                <Box sx={{ mb: 2 }}>
+                    <CustomTextField
+                        fullWidth
+                        label="Search Tasks"
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
                 </Box>
             </Box>
 
@@ -138,7 +166,7 @@ function Tasks() {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
-                                                maxWidth: 'calc(15ch)',
+                                                maxWidth: 'calc(10ch)',
                                                 color: 'white'
                                             }}
                                             variant='h5'>
@@ -199,7 +227,7 @@ function Tasks() {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
-                                                maxWidth: 'calc(15ch)',
+                                                maxWidth: 'calc(10ch)',
                                             }}
                                             variant='h5'>
                                             {task.title.length > 50 ? `${task.title.substring(0, 50)}...` : task.title}
@@ -274,7 +302,7 @@ function Tasks() {
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
                                                 whiteSpace: 'nowrap',
-                                                maxWidth: 'calc(15ch)',
+                                                maxWidth: 'calc(10ch)',
                                             }}
                                             variant='h5'>
                                             {task.title.length > 50 ? `${task.title.substring(0, 50)}...` : task.title}

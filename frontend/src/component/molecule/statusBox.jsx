@@ -13,6 +13,7 @@ function StatusBox({ children, sx }) {
                 flex: 1,
                 minWidth: '250px',
                 padding: 1,
+                minHeight: '450px',
             }}>
                 {children}
             </Box>

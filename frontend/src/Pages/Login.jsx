@@ -5,6 +5,7 @@ import CustomTextField from '../component/atom/customTextField';
 import BoxCont from '../component/atom/boxCont';
 import BoxBorder from '../component/atom/boxBorder';
 import ButtonGrad from '../component/atom/buttonGrad';
+import { Box } from '@mui/material';
 
 const Login = ({ setToken }) => {
     const [email, setEmail] = useState('');
@@ -43,41 +44,50 @@ const Login = ({ setToken }) => {
     };
 
     return (
-        <BoxBorder>
-            <BoxCont>
-                <h2>Login</h2>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                <BoxCont
-                    component="form"
-                    onSubmit={handleLogin}>
-                    <CustomTextField
-                        type="email"
-                        label="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+        <Box sx={{
+            minHeight: "100vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+            py: 2,
+        }}>
+            <BoxBorder>
+                <BoxCont>
+                    <h2>Login</h2>
+                    {error && <p style={{ color: 'red' }}>{error}</p>}
+                    <BoxCont
+                        component="form"
+                        onSubmit={handleLogin}>
+                        <CustomTextField
+                            type="email"
+                            label="Email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
 
-                        error={submitted && !email}
-                        helperText={submitted && !email ? "Email is required." : ""}
-                    />
+                            error={submitted && !email}
+                            helperText={submitted && !email ? "Email is required." : ""}
+                        />
 
-                    <CustomTextField
-                        type="password"
-                        label="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        <CustomTextField
+                            type="password"
+                            label="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
 
-                        error={submitted && !password}
-                        helperText={submitted && !password ? "Password is required." : ""}
-                    />
+                            error={submitted && !password}
+                            helperText={submitted && !password ? "Password is required." : ""}
+                        />
 
-                    <ButtonGrad type="submit">Login</ButtonGrad>
+                        <ButtonGrad type="submit">Login</ButtonGrad>
+                    </BoxCont>
+                    <BoxCont style={{ marginTop: '20px' }}>
+                        <p>Don't have an account?</p>
+                        <ButtonGrad onClick={() => navigate('/register')}>Go to Register</ButtonGrad>
+                    </BoxCont>
                 </BoxCont>
-                <BoxCont style={{ marginTop: '20px' }}>
-                    <p>Don't have an account?</p>
-                    <ButtonGrad onClick={() => navigate('/register')}>Go to Register</ButtonGrad>
-                </BoxCont>
-            </BoxCont>
-        </BoxBorder>
+            </BoxBorder>
+        </Box>
     );
 };
 

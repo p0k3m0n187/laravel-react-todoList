@@ -36,8 +36,8 @@ function App() {
           sx={{
             minHeight: "100vh",
             display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            // justifyContent: "center",
+            // alignItems: "center",
             flexDirection: "column",
             py: 2,
           }}

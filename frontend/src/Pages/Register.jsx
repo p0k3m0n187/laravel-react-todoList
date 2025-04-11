@@ -5,6 +5,7 @@ import BoxCont from '../component/atom/boxCont';
 import CustomTextField from '../component/atom/customTextField';
 import ButtonGrad from '../component/atom/buttonGrad';
 import BoxBorder from '../component/atom/boxBorder';
+import { Box } from '@mui/material';
 
 const Register = () => {
     const [firstName, setFirstName] = useState('');
@@ -63,73 +64,82 @@ const Register = () => {
     };
 
     return (
-        <BoxBorder>
-            <BoxCont>
+        <Box sx={{
+            minHeight: "100vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+            py: 2,
+        }}>
+            <BoxBorder>
+                <BoxCont>
 
-                <BoxCont
-                    component="form"
-                    onSubmit={handleRegister}>
-                    <h2>Register</h2>
+                    <BoxCont
+                        component="form"
+                        onSubmit={handleRegister}>
+                        <h2>Register</h2>
 
-                    <CustomTextField
-                        type="text"
-                        label="First Name"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        error={submitted && !firstName}
-                        helperText={submitted && !firstName ? "First Name is required." : ""}
-                    />
-                    <CustomTextField
-                        type="text"
-                        label="Last Name"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        error={submitted && !lastName}
-                        helperText={submitted && !lastName ? "Last Name is required." : ""}
-                    />
-                    <CustomTextField
-                        type="email"
-                        label="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        error={submitted && !email}
-                        helperText={submitted && !email ? "Email is required." : ""}
-                    />
-                    <CustomTextField
-                        type="password"
-                        label="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        error={submitted && !password}
-                        helperText={
-                            submitted && !password
-                                ? "Password is required."
-                                : submitted && password && !/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/.test(password)
-                                    ? "Password must contain alphabets, numbers, and special characters."
-                                    : ""
-                        }
-                        FormHelperTextProps={{
-                            style: {
-                                color: 'red',  
-                            },
-                        }}
-                    />
-                    <CustomTextField
-                        type="password"
-                        label="Confirm Password"
-                        value={passwordConfirmation}
-                        onChange={(e) => setPasswordConfirmation(e.target.value)}
-                        error={submitted && (password !== passwordConfirmation)}
-                        helperText={submitted && (password !== passwordConfirmation) ? "Passwords do not match." : ""}
-                    />
-                    <ButtonGrad type="submit">Register</ButtonGrad>
+                        <CustomTextField
+                            type="text"
+                            label="First Name"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            error={submitted && !firstName}
+                            helperText={submitted && !firstName ? "First Name is required." : ""}
+                        />
+                        <CustomTextField
+                            type="text"
+                            label="Last Name"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            error={submitted && !lastName}
+                            helperText={submitted && !lastName ? "Last Name is required." : ""}
+                        />
+                        <CustomTextField
+                            type="email"
+                            label="Email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            error={submitted && !email}
+                            helperText={submitted && !email ? "Email is required." : ""}
+                        />
+                        <CustomTextField
+                            type="password"
+                            label="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            error={submitted && !password}
+                            helperText={
+                                submitted && !password
+                                    ? "Password is required."
+                                    : submitted && password && !/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/.test(password)
+                                        ? "Password must contain alphabets, numbers, and special characters."
+                                        : ""
+                            }
+                            FormHelperTextProps={{
+                                style: {
+                                    color: 'red',
+                                },
+                            }}
+                        />
+                        <CustomTextField
+                            type="password"
+                            label="Confirm Password"
+                            value={passwordConfirmation}
+                            onChange={(e) => setPasswordConfirmation(e.target.value)}
+                            error={submitted && (password !== passwordConfirmation)}
+                            helperText={submitted && (password !== passwordConfirmation) ? "Passwords do not match." : ""}
+                        />
+                        <ButtonGrad type="submit">Register</ButtonGrad>
+                    </BoxCont>
+                    <BoxCont sx={{ marginTop: '20px' }}>
+                        <p>Already have an account?</p>
+                        <ButtonGrad onClick={() => navigate('/login')}>Login</ButtonGrad>
+                    </BoxCont>
                 </BoxCont>
-                <BoxCont sx={{ marginTop: '20px' }}>
-                    <p>Already have an account?</p>
-                    <ButtonGrad onClick={() => navigate('/login')}>Login</ButtonGrad>
-                </BoxCont>
-            </BoxCont>
-        </BoxBorder>
+            </BoxBorder>
+        </Box>
     );
 };
 
