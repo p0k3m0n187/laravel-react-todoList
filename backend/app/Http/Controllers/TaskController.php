@@ -8,12 +8,31 @@ use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
-    // Shows all tasks
-    public function index()
-    {
-        $tasks = Task::all();  // Fetch all tasks (corrected variable name to 'tasks')
-        return response()->json($tasks);  // Return tasks as JSON
+    // // Shows all tasks
+    // public function index()
+    // {
+    //     $tasks = Task::all();  // Fetch all tasks (corrected variable name to 'tasks')
+    //     return response()->json($tasks);  // Return tasks as JSON
+    // }
+
+    // Shows task for a specific user
+    public function myTasks(){
+        $userId = Auth::id(); // Get the authenticated user's ID
+        $tasks = Task::where('user_id', $userId)->get(); // Fetch tasks for the authenticated user
+        return response()->json($tasks); // Return tasks as JSON
     }
+
+    // public function allAndMyTasks()
+    // {
+    //     $userId = Auth::id(); // Get the authenticated user's ID
+    //     $allTasks = Task::all(); // Fetch all tasks
+    //     $myTasks = Task::where('user_id', $userId)->get(); // Fetch tasks created by the user
+
+    //     return response()->json([
+    //         'all_tasks' => $allTasks,
+    //         'my_tasks' => $myTasks,
+    //     ]); // Return both lists as JSON
+    // }
 
     // Creates a new task
     public function store(Request $request)

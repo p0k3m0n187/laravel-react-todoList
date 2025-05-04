@@ -25,29 +25,52 @@ function Tasks() {
     const handleClose = () => setOpen(false);
 
     // Effect to fetch tasks from backend
+    // useEffect(() => {
+    //     const fetchTasks = async () => {
+    //         try {
+    //             const token = localStorage.getItem('token'); // Get token from local storage
+    //             if (!token) {
+    //                 // Redirect to login page if no token is found
+    //                 navigate('/login');
+    //                 return;
+    //             }
+
+    //             const response = await axios.get('http://127.0.0.1:8000/api/tasks', {
+    //                 headers: {
+    //                     Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+    //                 },
+    //             });
+    //             setTasks(response.data); // Store tasks in state
+    //         } catch (err) {
+    //             console.error('Error fetching tasks:', err);
+    //         }
+    //     };
+
+    //     fetchTasks();
+    // }, [navigate]); // Empty dependency array ensures this runs once when the component mounts
+
     useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const token = localStorage.getItem('token'); // Get token from local storage
-                if (!token) {
-                    // Redirect to login page if no token is found
-                    navigate('/login');
-                    return;
-                }
-
-                const response = await axios.get('http://127.0.0.1:8000/api/tasks', {
-                    headers: {
-                        Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-                    },
-                });
-                setTasks(response.data); // Store tasks in state
-            } catch (err) {
-                console.error('Error fetching tasks:', err);
+    const fetchUserTasks = async () => {
+        try {
+            const token = localStorage.getItem('token'); // Get token from local storage
+            if (!token) {
+                navigate('/login'); // Redirect to login page if no token is found
+                return;
             }
-        };
 
-        fetchTasks();
-    }, [navigate]); // Empty dependency array ensures this runs once when the component mounts
+            const response = await axios.get('http://127.0.0.1:8000/api/my-tasks', {
+                headers: {
+                    Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+                },
+            });
+            setTasks(response.data); // Store user-specific tasks in state
+        } catch (err) {
+            console.error('Error fetching user-specific tasks:', err);
+        }
+    };
+
+    fetchUserTasks();
+}, [navigate]); // Empty dependency array ensures this runs once when the component mounts
 
     const handleDeleteTask = async (taskId) => {
         const confirmDelete = window.confirm('Are you sure you want to delete this task?');
