@@ -22,25 +22,13 @@ class TaskController extends Controller
         return response()->json($tasks); // Return tasks as JSON
     }
 
-    // public function allAndMyTasks()
-    // {
-    //     $userId = Auth::id(); // Get the authenticated user's ID
-    //     $allTasks = Task::all(); // Fetch all tasks
-    //     $myTasks = Task::where('user_id', $userId)->get(); // Fetch tasks created by the user
-
-    //     return response()->json([
-    //         'all_tasks' => $allTasks,
-    //         'my_tasks' => $myTasks,
-    //     ]); // Return both lists as JSON
-    // }
-
     // Creates a new task
     public function store(Request $request)
     {
-        // // Check if the user is authenticated
-        // if (!Auth::check()) {
-        //     return response()->json(['message' => 'User not authenticated'], 401);
-        // }
+        // Check if the user is authenticated
+        if (!Auth::check()) {
+            return response()->json(['message' => 'User not authenticated'], 401);
+        }
 
         // Validate the required fields
         $validate = $request->validate([

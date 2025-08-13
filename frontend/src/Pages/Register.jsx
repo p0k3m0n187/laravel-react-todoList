@@ -51,8 +51,12 @@ const Register = () => {
             if (err.response?.data?.errors) {
                 const errorMessages = err.response.data.errors;
 
+                //Email Exists
+                if (errorMessages.email) {
+                    setError("Email already exists. Please use a different email.");
+                }
                 // Display password-specific validation error
-                if (errorMessages.password) {
+                else if (errorMessages.password) {
                     setError(errorMessages.password[0]);  // Assuming the backend returns an array of error messages for the password field
                 } else {
                     setError('There was an error during registration.');
@@ -80,6 +84,13 @@ const Register = () => {
                         onSubmit={handleRegister}>
                         <h2>Register</h2>
 
+                        {/* Show error message if exists
+                        {error && (
+                            <div style={{ color: 'red', marginBottom: '10px', textAlign: 'center' }}>
+                                {error}
+                            </div>
+                        )} */}
+
                         <CustomTextField
                             type="text"
                             label="First Name"
@@ -101,8 +112,8 @@ const Register = () => {
                             label="Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            error={submitted && !email}
-                            helperText={submitted && !email ? "Email is required." : ""}
+                            error={(submitted && !email) || (error === "Email already exists. Please use a different email.")}
+                            helperText={submitted && !email ? "Email is required." : error === "Email already exists. Please use a different email." ? error : ""}
                         />
                         <CustomTextField
                             type="password"

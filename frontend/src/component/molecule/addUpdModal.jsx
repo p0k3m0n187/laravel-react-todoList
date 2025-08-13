@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
 import axios from 'axios';
-import { Button, FormControl, InputLabel, MenuItem, Select, TextField, Snackbar, Alert } from '@mui/material';
+import { Button, FormControl, InputLabel, MenuItem, Select, TextField, Snackbar, Alert, Autocomplete } from '@mui/material';
 
 const style = {
     position: 'absolute',
@@ -25,6 +25,9 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
     const [endDate, setEndDate] = useState('');
     const [success, setSuccess] = useState(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [assignedUserId, setAssignedUserId] = useState('');
+    const [assignedUserIds, setAssignedUserIds] = useState([]); // For multiple user assignment
 
     // Effect to populate fields when a task is selected for updating
     useEffect(() => {
@@ -38,10 +41,26 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
             setTitle('');
             setDescription('');
             setStatus('pending'); // Default to 'pending' if no task is selected
-            setStartDate('');
+            // setStartDate('');
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            setStartDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+            setAssignedUserIds('');
             setEndDate('');
         }
     }, [task, open]);
+
+    useEffect(() => {
+        if (open) {
+            axios.get(`http://127.0.0.1:8000/api/users`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            }).then(res => setUsers(res.data));
+        }
+    }, [open]);
 
     const formatDate = (date, isUpdating) => {
         if (!date) return null;
@@ -69,23 +88,36 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
         try {
             let response;
 
-            if (task?.id) {
-                // Update existing task
-                response = await axios.put(
-                    `http://127.0.0.1:8000/api/tasks/${task.id}`,
-                    {
-                        title,
-                        description,
-                        status,
-                        start_date: formattedStartDate,
-                        end_date: formattedEndDate,
-                    },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
+            // if (task?.id) {
+            //     // Update existing task
+            //     response = await axios.put(
+            //         `http://127.0.0.1:8000/api/tasks/${task.id}`,
+            //         {
+            //             title,
+            //             description,
+            //             status,
+            //             start_date: formattedStartDate,
+            //             end_date: formattedEndDate,
+            //         },
+            //         {
+            //             headers: {
+            //                 Authorization: `Bearer ${token}`,
+            //             },
+            //         }
+            //     );
+
+            if (!task?.id && assignedUserIds.length > 0) {
+                await Promise.all(
+                    assignedUserIds.map(userId =>
+                        axios.post('http://127.0.0.1:8000/api/assigned-tasks', {
+                            user_id: userId,
+                            task_id: response.data.id,
+                        }, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        })
+                    )
                 );
+
 
                 // Update tasks state optimistically
                 setTasks(prevTasks => prevTasks.map(t => (t.id === task.id ? response.data : t))); // Replace task
@@ -113,13 +145,27 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
             }
 
             if (response.status === 200 || response.status === 201) {
-                setSuccess('Task saved successfully!');
+                setSuccess(task?.id ? 'Task updated successfully!' : 'Task added successfully!');
                 setSnackbarOpen(true);  // Open Snackbar on success
+
+                // Assign the task if a user is selected and it's a new task
+                if (!task?.id && assignedUserId) {
+                    await axios.post('http://127.0.0.1:8000/api/assigned-tasks', {
+                        user_id: assignedUserId,
+                        task_id: response.data.id,
+                    }, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    })
+                }
+
                 setTitle('');
                 setDescription('');
                 setStatus('pending');
                 setStartDate('');
                 setEndDate('');
+                setAssignedUserId('');
                 handleClose(); // Close the modal
             }
         } catch (err) {
@@ -133,7 +179,7 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
 
     return (
         <>
-            <Modal open={open} onClose={handleClose}>
+            <Modal open={open}>
                 <Box sx={style}>
                     <Typography sx={{ mb: 3 }} variant="h6">{task ? 'Update Task' : 'Add Task'}</Typography>
 
@@ -168,6 +214,7 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
                             </Select>
                         </FormControl>
                         <TextField
+                            required
                             label="Start Date"
                             type="datetime-local"
                             value={startDate}
@@ -175,11 +222,37 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
                             InputLabelProps={{ shrink: true }}
                         />
                         <TextField
+                            required
                             label="Due Date"
                             type="datetime-local"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                             InputLabelProps={{ shrink: true }}
+                        />
+                        {/* <FormControl fullWidth>
+                            <InputLabel>Assign User</InputLabel>
+                            <Select
+                                value={assignedUserId}
+                                label="Assign To"
+                                onChange={(e) => setAssignedUserId(e.target.value)}
+                            >
+                                {users.map(user => (
+                                    <MenuItem key={user.id} value={user.id}>
+                                        {user.firstName} {user.lastName}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl> */}
+                        <Autocomplete
+                            multiple
+                            fullWidth
+                            options={users}
+                            getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                            value={users.filter(u => assignedUserIds.includes(u.id))}
+                            onChange={(event, newValue) => setAssignedUserIds(newValue.map(u => u.id))}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Assign Users" variant="outlined" />
+                            )}
                         />
                         <Button
                             type="submit"
@@ -187,15 +260,20 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
                             sx={{
                                 backgroundColor:
                                     status === 'pending'
-                                        ? 'red'            
+                                        ? 'red'
                                         : status === 'in_progress'
-                                            ? '#EAAE00'         
+                                            ? '#EAAE00'
                                             : status === 'completed'
-                                                ? 'green'           
-                                                : 'primary.main',   
+                                                ? 'green'
+                                                : 'primary.main',
                             }}
                         >
                             {task ? 'Update Task' : 'Add Task'}
+                        </Button>
+                        <Button variant="outlined"
+                            onClick={handleClose}
+                        >
+                            Cancel
                         </Button>
 
                     </Box>

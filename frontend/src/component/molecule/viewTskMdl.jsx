@@ -48,9 +48,41 @@ const buttonStyle = {
     },
 };
 
-export default function ViewTskMdl({ open, handleClose, task }) {
+export default function ViewTskMdl({ open, handleClose, task, handleDeleteTask }) {
+
+    // const handleDeleteTask = async (taskId) => {
+    //     const confirmDelete = window.confirm('Are you sure you want to delete this task?');
+
+    //     if (!confirmDelete) {
+    //         return; // If the user cancels, do nothing
+    //     }
+
+    //     try {
+    //         const token = localStorage.getItem('token'); // Get token from local storage
+    //         if (!token) {
+    //             Navigate('/login');
+    //             return;
+    //         }
+
+    //         const response = await axios.delete(`http://127.0.0.1:8000/api/tasks/${taskId}`, {
+    //             headers: {
+    //                 Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+    //             },
+    //         });
+
+    //         if (response.status === 200) {
+    //             // Remove the deleted task from the state
+    //             setDeleted("Task deleted successfully!");
+    //             setSnackbarOpen(true); // Open Snackbar on success deletion
+    //             setTasks(tasks.filter((task) => task.id !== taskId));
+    //         }
+    //     } catch (err) {
+    //         console.error('Error deleting task:', err);
+    //     }
+    // };
+
     return (
-        <Modal open={open} onClose={handleClose}>
+        <Modal open={open}>
             <Box sx={style}>
                 <Typography sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }} variant="h6">
                     View Task
@@ -83,12 +115,30 @@ export default function ViewTskMdl({ open, handleClose, task }) {
                     </Box>
 
                     <Button
+                        variant="outlined"
+                        sx={{
+                            backgroundColor: '#d32f2f',
+                            color: 'white',
+                            borderColor: '#d32f2f',
+                            '&:hover': {
+                                backgroundColor: '#b71c1c',
+                                borderColor: '#b71c1c',
+                            },
+                        }}
+                        onClick={() => handleDeleteTask(task?.id)}
+                    >
+                        Delete Task
+                    </Button>
+
+                    <Button
                         variant="contained"
                         sx={buttonStyle}
                         onClick={handleClose}
                     >
                         Close
                     </Button>
+
+
                 </Box>
             </Box>
         </Modal>

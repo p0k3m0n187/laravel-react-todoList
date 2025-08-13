@@ -5,7 +5,6 @@ import { Alert, Box, Button, Snackbar, Tooltip, Typography, InputAdornment } fro
 import StatusBox from '../component/molecule/statusBox';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import VisibilityIcon from '@mui/icons-material/Edit';
-import ViewIcon from '@mui/icons-material/Visibility';
 import AddUpdateModal from '../component/molecule/addUpdModal';
 import ViewTskMdl from '../component/molecule/viewTskMdl';
 import CustomTextField from '../component/atom/customTextField';
@@ -21,7 +20,10 @@ function Tasks() {
     const [deleted, setDeleted] = useState(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-    const handleOpen = () => setOpen(true);
+    const handleOpen = () => {
+        setSelectedTask(null); // Clear selected task
+        setOpen(true)
+    };
     const handleClose = () => setOpen(false);
 
     // Effect to fetch tasks from backend
@@ -50,27 +52,27 @@ function Tasks() {
     // }, [navigate]); // Empty dependency array ensures this runs once when the component mounts
 
     useEffect(() => {
-    const fetchUserTasks = async () => {
-        try {
-            const token = localStorage.getItem('token'); // Get token from local storage
-            if (!token) {
-                navigate('/login'); // Redirect to login page if no token is found
-                return;
+        const fetchUserTasks = async () => {
+            try {
+                const token = localStorage.getItem('token'); // Get token from local storage
+                if (!token) {
+                    navigate('/login'); // Redirect to login page if no token is found
+                    return;
+                }
+
+                const response = await axios.get('http://127.0.0.1:8000/api/my-tasks', {
+                    headers: {
+                        Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+                    },
+                });
+                setTasks(response.data); // Store user-specific tasks in state
+            } catch (err) {
+                console.error('Error fetching user-specific tasks:', err);
             }
+        };
 
-            const response = await axios.get('http://127.0.0.1:8000/api/my-tasks', {
-                headers: {
-                    Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-                },
-            });
-            setTasks(response.data); // Store user-specific tasks in state
-        } catch (err) {
-            console.error('Error fetching user-specific tasks:', err);
-        }
-    };
-
-    fetchUserTasks();
-}, [navigate]); // Empty dependency array ensures this runs once when the component mounts
+        fetchUserTasks();
+    }, [navigate]); // Empty dependency array ensures this runs once when the component mounts
 
     const handleDeleteTask = async (taskId) => {
         const confirmDelete = window.confirm('Are you sure you want to delete this task?');
@@ -97,6 +99,7 @@ function Tasks() {
                 setDeleted("Task deleted successfully!");
                 setSnackbarOpen(true); // Open Snackbar on success deletion
                 setTasks(tasks.filter((task) => task.id !== taskId));
+                setOpenView(false); // Close the view modal after deletion
             }
         } catch (err) {
             console.error('Error deleting task:', err);
@@ -176,50 +179,84 @@ function Tasks() {
                             {pendingTasks.map((task) => (
                                 <Box
                                     key={task.id}
+                                    onClick={() => handleViewTask(task)}
                                     sx={{
                                         borderRadius: 3,
                                         display: 'flex',
-                                        height: '100%',
+                                        height: '150px',
+                                        width: '250px',
                                         flexDirection: 'column',
                                         boxShadow: '-5px 8px 10px 5px rgba(0, 0, 0, 0.2)',
                                     }}>
-                                    <Box sx={{ display: 'relative', backgroundColor: '#d32f2f', borderTopLeftRadius: '10px', borderTopRightRadius: '10px', p: 1, mb: 2 }}>
-                                        <Typography
-                                            sx={{
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                                maxWidth: 'calc(10ch)',
-                                                color: 'white'
-                                            }}
-                                            variant='h5'>
-                                            {task.title.length > 50 ? `${task.title.substring(0, 50)}...` : task.title}
-                                        </Typography>
-                                    </Box>
+                                    <Box
+                                        sx={{
+                                            display: 'relative',
+                                            backgroundColor: '#d32f2f',
+                                            borderTopLeftRadius: '10px',
+                                            borderTopRightRadius: '10px',
+                                            height: '20px',
+                                        }} />
                                     <Box sx={{ p: 1 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Typography variant='h5'>
+                                                {task.title.length > 15 ? `${task.title.substring(0, 15)}...` : task.title}
+                                            </Typography>
+                                            <Button onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUpdateTask(task)
+                                            }}
+                                                sx={{ p: 0, minWidth: 0 }}>
+                                                <VisibilityIcon sx={{ fontSize: '24px', color: 'red', padding: 0 }} />
+                                            </Button>
+                                        </Box>
+                                        <Typography gutterBottom sx={{
+                                            fontSize: '1rem',
+                                            color: 'grey',
+                                            height: '50px',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            // justifyContent: 'center'
+                                        }}>
+                                            {task.description.length > 30 ? `${task.description.substring(0, 30)}...` : task.description}
+                                        </Typography>
                                         <Typography sx={{ fontSize: '10px', color: 'grey' }}>
-                                            Start Date: {task.start_date ? new Date(task.end_date).toLocaleString() : 'N/A'}</Typography>
+                                            Start Date: {task.start_date ? new Date(task.start_date).toLocaleString(undefined, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : 'N/A'}
+                                        </Typography>
                                         <Typography sx={{ fontSize: '10px', color: 'grey' }}>
-                                            Due Date: {task.end_date ? new Date(task.end_date).toLocaleString() : 'N/A'}
+                                            Due Date: {task.end_date ? new Date(task.end_date).toLocaleString(undefined, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : 'N/A'}
                                         </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                        <Tooltip title="View" arrow>
-                                            <Button onClick={() => handleViewTask(task)}>
-                                                <ViewIcon sx={{ fontSize: '24px', color: 'red' }} />
-                                            </Button>
-                                        </Tooltip>
+                                    {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                                         <Tooltip title="Delete" arrow>
-                                            <Button onClick={() => handleDeleteTask(task.id)}>
+                                            <Button onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteTask(task.id);
+                                            }}>
                                                 <DeleteForeverIcon sx={{ fontSize: '24px', color: 'red' }} />
                                             </Button>
                                         </Tooltip>
                                         <Tooltip title="Edit" arrow>
-                                            <Button onClick={() => handleUpdateTask(task)}>
+                                            <Button onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUpdateTask(task)
+                                            }}>
                                                 <VisibilityIcon sx={{ fontSize: '24px', color: 'red' }} />
                                             </Button>
                                         </Tooltip>
-                                    </Box>
+                                    </Box> */}
                                 </Box>
                             ))}
                         </Box>
@@ -235,65 +272,66 @@ function Tasks() {
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             {inProgressTasks.map((task) => (
                                 <Box
+                                    onClick={() => handleViewTask(task)}
                                     key={task.id}
                                     sx={{
                                         borderRadius: 3,
                                         display: 'flex',
-                                        height: '100%',
+                                        height: '150px',
+                                        width: '250px',
                                         flexDirection: 'column',
                                         boxShadow: '-5px 8px 10px 5px rgba(0, 0, 0, 0.2)',
                                     }}>
-                                    <Box sx={{ display: 'relative', backgroundColor: '#EAAE00', borderTopLeftRadius: '10px', borderTopRightRadius: '10px', p: 1, mb: 2 }}>
-                                        <Typography
-                                            sx={{
-                                                color: 'white',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                                maxWidth: 'calc(10ch)',
-                                            }}
-                                            variant='h5'>
-                                            {task.title.length > 50 ? `${task.title.substring(0, 50)}...` : task.title}
-                                        </Typography>
-                                    </Box>
+                                    <Box
+                                        sx={{
+                                            display: 'relative',
+                                            backgroundColor: '#EAAE00',
+                                            borderTopLeftRadius: '10px',
+                                            borderTopRightRadius: '10px',
+                                            height: '20px'
+                                        }} />
                                     <Box sx={{ p: 1 }}>
-                                        <Typography sx={{ fontSize: '10px', color: 'grey' }}>
-                                            Start Date: {task.start_date ? new Date(task.end_date).toLocaleString() : 'N/A'}</Typography>
-                                        <Typography sx={{ fontSize: '10px', color: 'grey' }}>
-                                            Due Date: {task.end_date ? new Date(task.end_date).toLocaleString() : 'N/A'}
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Typography variant='h5'>
+                                                {task.title.length > 15 ? `${task.title.substring(0, 15)}...` : task.title}
+                                            </Typography>
+                                            <Button onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUpdateTask(task)
+                                            }}
+                                                sx={{ p: 0, minWidth: 0 }}>
+                                                <VisibilityIcon sx={{ fontSize: '24px', color: '#EAAE00', padding: 0 }} />
+                                            </Button>
+                                        </Box>
+                                        <Typography gutterBottom sx={{
+                                            fontSize: '1rem',
+                                            color: 'grey',
+                                            height: '50px',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            // justifyContent: 'center'
+                                        }}>
+                                            {task.description.length > 30 ? `${task.description.substring(0, 30)}...` : task.description}
                                         </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                        <Tooltip title="View" arrow>
-                                            <Button onClick={() => handleViewTask(task)} >
-                                                <ViewIcon
-                                                    sx={{
-                                                        fontSize: '24px',
-                                                        color: '#EAAE00'
-                                                    }} />
-                                            </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Delete" arrow>
-                                            <Button onClick={() => handleDeleteTask(task.id)} >
-                                                <DeleteForeverIcon
-                                                    sx={{
-                                                        fontSize: '24px',
-                                                        color: '#EAAE00'
-                                                    }} />
-                                            </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Edit" arrow>
-                                            <Button
-                                                onClick={() => handleUpdateTask(task)}
-                                            >
-                                                <VisibilityIcon
-                                                    sx={{
-                                                        fontSize: '24px',
-                                                        color: '#EAAE00',
-                                                    }}
-                                                />
-                                            </Button>
-                                        </Tooltip>
+                                        <Typography sx={{ fontSize: '10px', color: 'grey' }}>
+                                            Start Date: {task.start_date ? new Date(task.start_date).toLocaleString(undefined, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : 'N/A'}
+                                        </Typography>
+                                        <Typography sx={{ fontSize: '10px', color: 'grey' }}>
+                                            Due Date: {task.end_date ? new Date(task.end_date).toLocaleString(undefined, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : 'N/A'}
+                                        </Typography>
                                     </Box>
                                 </Box>
                             ))}
@@ -310,65 +348,67 @@ function Tasks() {
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             {completedTasks.map((task) => (
                                 <Box
+                                    onClick={() => handleViewTask(task)}
                                     key={task.id}
                                     sx={{
                                         borderRadius: 3,
                                         display: 'flex',
-                                        height: '100%',
+                                        height: '150px',
+                                        width: '250px',
                                         flexDirection: 'column',
                                         boxShadow: '-5px 8px 10px 5px rgba(0, 0, 0, 0.2)',
                                     }}>
-                                    <Box sx={{ display: 'relative', backgroundColor: 'green', borderTopLeftRadius: '10px', borderTopRightRadius: '10px', p: 1, mb: 2 }}>
-                                        <Typography
-                                            sx={{
-                                                color: 'white',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                                maxWidth: 'calc(10ch)',
-                                            }}
-                                            variant='h5'>
-                                            {task.title.length > 50 ? `${task.title.substring(0, 50)}...` : task.title}
-                                        </Typography>
-                                    </Box>
+                                    <Box
+                                        sx={{
+                                            display: 'relative',
+                                            backgroundColor: 'green',
+                                            borderTopLeftRadius: '10px',
+                                            borderTopRightRadius: '10px',
+                                            height: '20px'
+                                        }} />
+
                                     <Box sx={{ p: 1 }}>
-                                        <Typography sx={{ fontSize: '10px', color: 'grey' }}>
-                                            Start Date: {task.start_date ? new Date(task.end_date).toLocaleString() : 'N/A'}</Typography>
-                                        <Typography sx={{ fontSize: '10px', color: 'grey' }}>
-                                            Due Date: {task.end_date ? new Date(task.end_date).toLocaleString() : 'N/A'}
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Typography variant='h5'>
+                                                {task.title.length > 15 ? `${task.title.substring(0, 15)}...` : task.title}
+                                            </Typography>
+                                            <Button onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUpdateTask(task)
+                                            }}
+                                                sx={{ p: 0, minWidth: 0 }}>
+                                                <VisibilityIcon sx={{ fontSize: '24px', color: 'green', padding: 0 }} />
+                                            </Button>
+                                        </Box>
+                                        <Typography gutterBottom sx={{
+                                            fontSize: '1rem',
+                                            color: 'grey',
+                                            height: '50px',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            // justifyContent: 'center'
+                                        }}>
+                                            {task.description.length > 30 ? `${task.description.substring(0, 30)}...` : task.description}
                                         </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                        <Tooltip title="View" arrow>
-                                            <Button onClick={() => handleViewTask(task)} >
-                                                <ViewIcon
-                                                    sx={{
-                                                        fontSize: '24px',
-                                                        color: 'green'
-                                                    }} />
-                                            </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Delete" arrow>
-                                            <Button onClick={() => handleDeleteTask(task.id)} >
-                                                <DeleteForeverIcon
-                                                    sx={{
-                                                        fontSize: '24px',
-                                                        color: 'green'
-                                                    }} />
-                                            </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Edit" arrow>
-                                            <Button
-                                                onClick={() => handleUpdateTask(task)}
-                                            >
-                                                <VisibilityIcon
-                                                    sx={{
-                                                        fontSize: '24px',
-                                                        color: 'green',
-                                                    }}
-                                                />
-                                            </Button>
-                                        </Tooltip>
+                                        <Typography sx={{ fontSize: '10px', color: 'grey' }}>
+                                            Start Date: {task.start_date ? new Date(task.start_date).toLocaleString(undefined, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : 'N/A'}
+                                        </Typography>
+                                        <Typography sx={{ fontSize: '10px', color: 'grey' }}>
+                                            Due Date: {task.end_date ? new Date(task.end_date).toLocaleString(undefined, {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : 'N/A'}
+                                        </Typography>
                                     </Box>
                                 </Box>
                             ))}
@@ -402,7 +442,16 @@ function Tasks() {
                 open={openView}
                 handleClose={() => setOpenView(false)} // Close the modal
                 task={selectedTask} // Pass the selected task data
+                handleDeleteTask={handleDeleteTask} // Pass the delete function down to the modal
             />
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={5000}
+                onClose={() => setSnackbarOpen(false)}>
+                <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: "100%" }}>
+                    {deleted}
+                </Alert>
+            </Snackbar>
         </Box >
     );
 }
