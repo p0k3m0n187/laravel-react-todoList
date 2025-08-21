@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Auth;
 class AssignedTaskController extends Controller
 {
     //shows all assigned tasks for the authenticated user
-    public function index(){
+    public function index()
+    {
         // Get the authenticated user's ID
         $userId = Auth::id();
 
@@ -25,16 +26,20 @@ class AssignedTaskController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
             'task_id' => 'required|exists:tasks,id',
         ]);
 
-        $assignedTask = AssignedTask::create([
-            'user_id' => $request->user_id,
-            'task_id' => $request->task_id,
-        ]);
+        $assignedTasks = [];
+        foreach ($request->user_ids as $userId) {
+            $assignedTasks[] = AssignedTask::create([
+                'user_id' => $userId,
+                'task_id' => $request->task_id,
+            ]);
+        }
 
-        return response()->json($assignedTask, 201); // Return the created assigned task with a 201 status
+        return response()->json($assignedTasks, 201); // Return the created assigned task with a 201 status
     }
 
     // Unassigns (delete) a task from a user
@@ -51,5 +56,12 @@ class AssignedTaskController extends Controller
     {
         $assignedTask = AssignedTask::findOrFail($id); // Find the assigned task by ID, or fail with 404
         return response()->json($assignedTask); // Return the assigned task as JSON
+    }
+
+    // Unassign all tasks by task ID
+    public function deleteByTask($taskId)
+    {
+        AssignedTask::where('task_id', $taskId)->delete();
+        return response()->json(['message' => 'All assignments for this task deleted']);
     }
 }

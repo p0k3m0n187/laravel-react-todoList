@@ -17,7 +17,7 @@ const style = {
     p: 4,
 };
 
-export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
+export default function AddUpdateModal({ open, handleClose, task, setTasks, fetchUserTasks }) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [status, setStatus] = useState('pending');
@@ -26,7 +26,7 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
     const [success, setSuccess] = useState(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [users, setUsers] = useState([]);
-    const [assignedUserId, setAssignedUserId] = useState('');
+    // const [assignedUserId, setAssignedUserId] = useState('');
     const [assignedUserIds, setAssignedUserIds] = useState([]); // For multiple user assignment
 
     // Effect to populate fields when a task is selected for updating
@@ -37,6 +37,12 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
             setStatus(task.status || 'pending'); // Ensure 'pending' as default if status is undefined
             setStartDate(task.start_date?.slice(0, 16) || ''); // Check date format
             setEndDate(task.end_date?.slice(0, 16) || ''); // Check date format
+            // Pre-populate assigned users
+            setAssignedUserIds(
+                Array.isArray(task.assigned_users)
+                    ? task.assigned_users.map(u => u.id)
+                    : []
+            );
         } else {
             setTitle('');
             setDescription('');
@@ -49,7 +55,7 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             setStartDate(`${year}-${month}-${day}T${hours}:${minutes}`);
-            setAssignedUserIds('');
+            setAssignedUserIds([]);
             setEndDate('');
         }
     }, [task, open]);
@@ -79,49 +85,142 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
     const formattedStartDate = formatDate(startDate, task?.id);  // Check if task is valid
     const formattedEndDate = formatDate(endDate, task?.id);
 
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+    //     setSuccess(null);
+
+    //     const token = localStorage.getItem('token');
+
+    //     try {
+    //         let response;
+
+    //         // if (task?.id) {
+    //         //     // Update existing task
+    //         //     response = await axios.put(
+    //         //         `http://127.0.0.1:8000/api/tasks/${task.id}`,
+    //         //         {
+    //         //             title,
+    //         //             description,
+    //         //             status,
+    //         //             start_date: formattedStartDate,
+    //         //             end_date: formattedEndDate,
+    //         //         },
+    //         //         {
+    //         //             headers: {
+    //         //                 Authorization: `Bearer ${token}`,
+    //         //             },
+    //         //         }
+    //         //     );
+
+    //         if (!task?.id && assignedUserIds.length > 0) {
+    //             await Promise.all(
+    //                 assignedUserIds.map(userId =>
+    //                     axios.post('http://127.0.0.1:8000/api/assigned-tasks', {
+    //                         user_id: userId,
+    //                         task_id: response.data.id,
+    //                     }, {
+    //                         headers: { Authorization: `Bearer ${token}` }
+    //                     })
+    //                 )
+    //             );
+
+
+    //             // Update tasks state optimistically
+    //             setTasks(prevTasks => prevTasks.map(t => (t.id === task.id ? response.data : t))); // Replace task
+
+    //         } else {
+    //             // Add new task
+    //             response = await axios.post(
+    //                 'http://127.0.0.1:8000/api/tasks',
+    //                 {
+    //                     title,
+    //                     description,
+    //                     status,
+    //                     start_date: formattedStartDate,
+    //                     end_date: formattedEndDate,
+    //                 },
+    //                 {
+    //                     headers: {
+    //                         Authorization: `Bearer ${token}`,
+    //                     },
+    //                 }
+    //             );
+
+    //             // Add the new task optimistically
+    //             setTasks(prevTasks => [...prevTasks, response.data]); // Add new task to the list
+    //         }
+
+    //         if (response.status === 200 || response.status === 201) {
+    //             setSuccess(task?.id ? 'Task updated successfully!' : 'Task added successfully!');
+    //             setSnackbarOpen(true);  // Open Snackbar on success
+
+    //             // Assign the task if a user is selected and it's a new task
+    //             if (!task?.id && assignedUserId) {
+    //                 await axios.post('http://127.0.0.1:8000/api/assigned-tasks', {
+    //                     user_id: assignedUserId,
+    //                     task_id: response.data.id,
+    //                 }, {
+    //                     headers: {
+    //                         Authorization: `Bearer ${token}`
+    //                     }
+    //                 })
+    //             }
+
+    //             setTitle('');
+    //             setDescription('');
+    //             setStatus('pending');
+    //             setStartDate('');
+    //             setEndDate('');
+    //             setAssignedUserId('');
+    //             handleClose(); // Close the modal
+    //         }
+    //     } catch (err) {
+    //         console.error('Error saving task:', err);
+    //     }
+    // };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSuccess(null);
 
         const token = localStorage.getItem('token');
+        let response;
 
         try {
-            let response;
-
-            // if (task?.id) {
-            //     // Update existing task
-            //     response = await axios.put(
-            //         `http://127.0.0.1:8000/api/tasks/${task.id}`,
-            //         {
-            //             title,
-            //             description,
-            //             status,
-            //             start_date: formattedStartDate,
-            //             end_date: formattedEndDate,
-            //         },
-            //         {
-            //             headers: {
-            //                 Authorization: `Bearer ${token}`,
-            //             },
-            //         }
-            //     );
-
-            if (!task?.id && assignedUserIds.length > 0) {
-                await Promise.all(
-                    assignedUserIds.map(userId =>
-                        axios.post('http://127.0.0.1:8000/api/assigned-tasks', {
-                            user_id: userId,
-                            task_id: response.data.id,
-                        }, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        })
-                    )
+            if (task?.id) {
+                // Update existing task
+                response = await axios.put(
+                    `http://127.0.0.1:8000/api/tasks/${task.id}`,
+                    {
+                        title,
+                        description,
+                        status,
+                        start_date: formattedStartDate,
+                        end_date: formattedEndDate,
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
                 );
 
+                // Remove all previous assignments for this task
+                await axios.delete(`http://127.0.0.1:8000/api/assigned-tasks/task/${task.id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
 
-                // Update tasks state optimistically
+                // Assign new users after updating (send one request with all user IDs)
+                if (assignedUserIds.length > 0) {
+                    await axios.post('http://127.0.0.1:8000/api/assigned-tasks', {
+                        user_ids: assignedUserIds,
+                        task_id: task.id,
+                    }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
+
                 setTasks(prevTasks => prevTasks.map(t => (t.id === task.id ? response.data : t))); // Replace task
-
             } else {
                 // Add new task
                 response = await axios.post(
@@ -140,33 +239,33 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks }) {
                     }
                 );
 
-                // Add the new task optimistically
+                // Assign users after adding (send one request with all user IDs)
+                if (assignedUserIds.length > 0) {
+                    await axios.post('http://127.0.0.1:8000/api/assigned-tasks', {
+                        user_ids: assignedUserIds,
+                        task_id: response.data.id,
+                    }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
+
                 setTasks(prevTasks => [...prevTasks, response.data]); // Add new task to the list
             }
 
             if (response.status === 200 || response.status === 201) {
-                setSuccess(task?.id ? 'Task updated successfully!' : 'Task added successfully!');
-                setSnackbarOpen(true);  // Open Snackbar on success
-
-                // Assign the task if a user is selected and it's a new task
-                if (!task?.id && assignedUserId) {
-                    await axios.post('http://127.0.0.1:8000/api/assigned-tasks', {
-                        user_id: assignedUserId,
-                        task_id: response.data.id,
-                    }, {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    })
-                }
-
+                // setSuccess(task?.id ? 'Task updated successfully!' : 'Task added successfully!');
+                setSuccess(response.data.message); // Show backend message in Snackbar
+                setSnackbarOpen(true);
                 setTitle('');
                 setDescription('');
                 setStatus('pending');
                 setStartDate('');
                 setEndDate('');
-                setAssignedUserId('');
-                handleClose(); // Close the modal
+                setAssignedUserIds([]);
+                handleClose();
+                if (fetchUserTasks) {
+                    fetchUserTasks(); // <-- Fetch latest tasks after add/update
+                }
             }
         } catch (err) {
             console.error('Error saving task:', err);

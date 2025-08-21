@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Box, Button, Snackbar, Tooltip, Typography, InputAdornment } from '@mui/material';
+import { Alert, Box, Button, Snackbar, Typography, InputAdornment } from '@mui/material';
 import StatusBox from '../component/molecule/statusBox';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import VisibilityIcon from '@mui/icons-material/Edit';
 import AddUpdateModal from '../component/molecule/addUpdModal';
 import ViewTskMdl from '../component/molecule/viewTskMdl';
@@ -21,58 +20,31 @@ function Tasks() {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     const handleOpen = () => {
-        setSelectedTask(null); // Clear selected task
+        setSelectedTask(null);
         setOpen(true)
     };
     const handleClose = () => setOpen(false);
 
-    // Effect to fetch tasks from backend
-    // useEffect(() => {
-    //     const fetchTasks = async () => {
-    //         try {
-    //             const token = localStorage.getItem('token'); // Get token from local storage
-    //             if (!token) {
-    //                 // Redirect to login page if no token is found
-    //                 navigate('/login');
-    //                 return;
-    //             }
-
-    //             const response = await axios.get('http://127.0.0.1:8000/api/tasks', {
-    //                 headers: {
-    //                     Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-    //                 },
-    //             });
-    //             setTasks(response.data); // Store tasks in state
-    //         } catch (err) {
-    //             console.error('Error fetching tasks:', err);
-    //         }
-    //     };
-
-    //     fetchTasks();
-    // }, [navigate]); // Empty dependency array ensures this runs once when the component mounts
+    const fetchUserTasks = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/login');
+                return;
+            }
+            const response = await axios.get('http://127.0.0.1:8000/api/my-tasks', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setTasks(response.data);
+        } catch (err) {
+            console.error('Error fetching user-specific tasks:', err);
+        }
+    }, [navigate]);
 
     useEffect(() => {
-        const fetchUserTasks = async () => {
-            try {
-                const token = localStorage.getItem('token'); // Get token from local storage
-                if (!token) {
-                    navigate('/login'); // Redirect to login page if no token is found
-                    return;
-                }
-
-                const response = await axios.get('http://127.0.0.1:8000/api/my-tasks', {
-                    headers: {
-                        Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-                    },
-                });
-                setTasks(response.data); // Store user-specific tasks in state
-            } catch (err) {
-                console.error('Error fetching user-specific tasks:', err);
-            }
-        };
-
         fetchUserTasks();
-    }, [navigate]); // Empty dependency array ensures this runs once when the component mounts
+    }, [fetchUserTasks]);
+
 
     const handleDeleteTask = async (taskId) => {
         const confirmDelete = window.confirm('Are you sure you want to delete this task?');
@@ -96,7 +68,8 @@ function Tasks() {
 
             if (response.status === 200) {
                 // Remove the deleted task from the state
-                setDeleted("Task deleted successfully!");
+                // setDeleted("Task deleted successfully!");
+                setDeleted(response.data.message);
                 setSnackbarOpen(true); // Open Snackbar on success deletion
                 setTasks(tasks.filter((task) => task.id !== taskId));
                 setOpenView(false); // Close the view modal after deletion
@@ -122,7 +95,7 @@ function Tasks() {
 
     // Filter tasks based on their status and search query
     const filteredTasks = tasks.filter((task) =>
-        task.title.toLowerCase().includes(searchQuery.toLowerCase())
+        (task.title ?? '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     // Filter tasks based on their status
@@ -239,6 +212,17 @@ function Tasks() {
                                             }) : 'N/A'}
                                         </Typography>
                                     </Box>
+                                    {/* <Box sx={{
+                                        display: 'flex',
+                                    }}>
+                                        <AvatarGroup max={4}>
+                                            <Avatar>A</Avatar>
+                                            <Avatar>B</Avatar>
+                                            <Avatar>C</Avatar>
+                                            <Avatar>D</Avatar>
+                                            <Avatar>E</Avatar>
+                                        </AvatarGroup>
+                                    </Box> */}
                                     {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                                         <Tooltip title="Delete" arrow>
                                             <Button onClick={(e) => {
@@ -427,6 +411,7 @@ function Tasks() {
                 }}
                 task={selectedTask}
                 setTasks={setTasks} // Pass setTasks down to the modal
+                fetchUserTasks={fetchUserTasks}
             />
             <Snackbar
                 open={snackbarOpen}

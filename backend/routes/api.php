@@ -26,6 +26,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/assigned-tasks', [AssignedTaskController::class, 'store']); // Assign a task to a user
     Route::get('/assigned-tasks/{id}', [AssignedTaskController::class, 'show']); // Show a specific assignment
     Route::delete('/assigned-tasks/{id}', [AssignedTaskController::class, 'destroy']); // Unassign a task
+    Route::delete('/assigned-tasks/task/{taskId}', [AssignedTaskController::class, 'deleteByTask']); // Unassign all tasks by task ID
 
     // User Routes
     Route::post('/logout', [AuthController::class, 'logout']); // Logout route

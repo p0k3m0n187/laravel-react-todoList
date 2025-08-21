@@ -47,4 +47,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // Get the tasks assigned to the user
+    public function assigned_tasks()
+    {
+        return $this->belongsToMany(Task::class, 'assigned_tasks', 'user_id', 'task_id');
+    }
 }

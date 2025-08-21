@@ -50,37 +50,6 @@ const buttonStyle = {
 
 export default function ViewTskMdl({ open, handleClose, task, handleDeleteTask }) {
 
-    // const handleDeleteTask = async (taskId) => {
-    //     const confirmDelete = window.confirm('Are you sure you want to delete this task?');
-
-    //     if (!confirmDelete) {
-    //         return; // If the user cancels, do nothing
-    //     }
-
-    //     try {
-    //         const token = localStorage.getItem('token'); // Get token from local storage
-    //         if (!token) {
-    //             Navigate('/login');
-    //             return;
-    //         }
-
-    //         const response = await axios.delete(`http://127.0.0.1:8000/api/tasks/${taskId}`, {
-    //             headers: {
-    //                 Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-    //             },
-    //         });
-
-    //         if (response.status === 200) {
-    //             // Remove the deleted task from the state
-    //             setDeleted("Task deleted successfully!");
-    //             setSnackbarOpen(true); // Open Snackbar on success deletion
-    //             setTasks(tasks.filter((task) => task.id !== taskId));
-    //         }
-    //     } catch (err) {
-    //         console.error('Error deleting task:', err);
-    //     }
-    // };
-
     return (
         <Modal open={open}>
             <Box sx={style}>
@@ -112,6 +81,19 @@ export default function ViewTskMdl({ open, handleClose, task, handleDeleteTask }
                     <Box>
                         <Typography sx={titleStyle}>Due Date:</Typography>
                         <Typography sx={valueStyle}>{task?.end_date ? new Date(task.end_date).toLocaleString() : 'N/A'}</Typography>
+                    </Box>
+
+                    <Box>
+                        <Typography sx={titleStyle}>Assigned Users:</Typography>
+                        <Box sx={descriptionBoxStyle}>
+                            <Typography sx={valueStyle}>
+                                {task?.assigned_users && task.assigned_users.length > 0
+                                    ? task.assigned_users.map(user =>
+                                        `${user.id}: ${user.firstName} ${user.lastName}`
+                                    ).join(', ')
+                                    : 'No users assigned'}
+                            </Typography>
+                        </Box>
                     </Box>
 
                     <Button

@@ -8,18 +8,19 @@ use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
-    // // Shows all tasks
-    // public function index()
-    // {
-    //     $tasks = Task::all();  // Fetch all tasks (corrected variable name to 'tasks')
-    //     return response()->json($tasks);  // Return tasks as JSON
-    // }
-
     // Shows task for a specific user
-    public function myTasks(){
+    public function myTasks()
+    // {
+    //     $userId = Auth::id(); // Get the authenticated user's ID
+    //     $tasks = Task::where('user_id', $userId)->get(); // Fetch tasks for the authenticated user
+    //     return response()->json($tasks); // Return tasks as JSON
+    // }
+    {
         $userId = Auth::id(); // Get the authenticated user's ID
-        $tasks = Task::where('user_id', $userId)->get(); // Fetch tasks for the authenticated user
-        return response()->json($tasks); // Return tasks as JSON
+        $tasks = Task::with('assigned_users') // Eager load assigned users
+            ->where('user_id', $userId)
+            ->get();
+        return response()->json($tasks); // Return tasks with assigned users as JSON
     }
 
     // Creates a new task
@@ -45,14 +46,16 @@ class TaskController extends Controller
         // Create the task
         $task = Task::create($validate);
 
-        return response()->json($task, 201);  // Return the created task with a 201 status
+        return response()->json([
+            'message' => 'Task created successfully!',
+            'task' => $task
+        ], 201);  // Return the created task with a 201 status
     }
 
-    // Shows a specific task
     public function show($id)
     {
-        $task = Task::findOrFail($id);  // Find the task by ID, or fail with 404
-        return response()->json($task);  // Return the task as JSON
+        $task = Task::with('assigned_users')->findOrFail($id);
+        return response()->json($task);
     }
 
     // Updates a specific task
@@ -72,7 +75,10 @@ class TaskController extends Controller
         // Update the task with validated data
         $task->update($validate);
 
-        return response()->json($task);  // Return updated task as JSON
+        return response()->json([
+            'message' => 'Task updated successfully!',
+            'task' => $task
+        ]);  // Return updated task as JSON
     }
 
     // Deletes a specific task
