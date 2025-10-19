@@ -220,7 +220,7 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks, fetc
                     });
                 }
 
-                setTasks(prevTasks => prevTasks.map(t => (t.id === task.id ? response.data : t))); // Replace task
+                setTasks(prevTasks => prevTasks.map(t => (t.id === task.id ? response.data.task : t))); // Replace task
             } else {
                 // Add new task
                 response = await axios.post(
@@ -243,13 +243,13 @@ export default function AddUpdateModal({ open, handleClose, task, setTasks, fetc
                 if (assignedUserIds.length > 0) {
                     await axios.post('http://127.0.0.1:8000/api/assigned-tasks', {
                         user_ids: assignedUserIds,
-                        task_id: response.data.id,
+                        task_id: response.data.task.id,
                     }, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                 }
 
-                setTasks(prevTasks => [...prevTasks, response.data]); // Add new task to the list
+                setTasks(prevTasks => [...prevTasks, response.data.task]); // Add new task to the list
             }
 
             if (response.status === 200 || response.status === 201) {

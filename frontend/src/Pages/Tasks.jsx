@@ -10,6 +10,7 @@ import CustomTextField from '../component/atom/customTextField';
 import SearchIcon from '@mui/icons-material/Search';
 
 function Tasks() {
+    const [myTasks, setMyTasks] = useState([]); // State to store my tasks
     const [tasks, setTasks] = useState([]); // State to store tasks
     const [searchQuery, setSearchQuery] = useState(''); // State for search query
     const navigate = useNavigate(); // Initialize useNavigate
@@ -32,7 +33,7 @@ function Tasks() {
                 navigate('/login');
                 return;
             }
-            const response = await axios.get('http://127.0.0.1:8000/api/my-tasks', {
+            const response = await axios.get('http://127.0.0.1:8000/api/assigned-tasks', {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setTasks(response.data);
@@ -44,6 +45,27 @@ function Tasks() {
     useEffect(() => {
         fetchUserTasks();
     }, [fetchUserTasks]);
+
+    const fetchMyTasks = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/login');
+                return;
+            }
+
+            const response = await axios.get('http://127.0.0.1:8000/api/my-tasks', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setMyTasks(response.data);
+        } catch (err) {
+            console.error('Error fetching my tasks:', err);
+        }
+    }, [navigate]);
+
+    useEffect(() => {
+        fetchMyTasks();
+    }, [fetchMyTasks]);
 
 
     const handleDeleteTask = async (taskId) => {
@@ -212,35 +234,6 @@ function Tasks() {
                                             }) : 'N/A'}
                                         </Typography>
                                     </Box>
-                                    {/* <Box sx={{
-                                        display: 'flex',
-                                    }}>
-                                        <AvatarGroup max={4}>
-                                            <Avatar>A</Avatar>
-                                            <Avatar>B</Avatar>
-                                            <Avatar>C</Avatar>
-                                            <Avatar>D</Avatar>
-                                            <Avatar>E</Avatar>
-                                        </AvatarGroup>
-                                    </Box> */}
-                                    {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                        <Tooltip title="Delete" arrow>
-                                            <Button onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteTask(task.id);
-                                            }}>
-                                                <DeleteForeverIcon sx={{ fontSize: '24px', color: 'red' }} />
-                                            </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Edit" arrow>
-                                            <Button onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleUpdateTask(task)
-                                            }}>
-                                                <VisibilityIcon sx={{ fontSize: '24px', color: 'red' }} />
-                                            </Button>
-                                        </Tooltip>
-                                    </Box> */}
                                 </Box>
                             ))}
                         </Box>
@@ -401,6 +394,41 @@ function Tasks() {
                         <p>No completed tasks available.</p>
                     )}
                 </StatusBox>
+
+                <Box>
+                    <Typography variant="h6" sx={{ mb: 1 }}>My Created Tasks</Typography>
+                    {myTasks.length > 0 ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {myTasks.map((task) => (
+                                <Box
+                                    key={task.id}
+                                    sx={{
+                                        borderRadius: 3,
+                                        boxShadow: '-5px 8px 10px 5px rgba(0, 0, 0, 0.1)',
+                                        p: 2,
+                                        mb: 1,
+                                        bgcolor: '#f9f9f9',
+                                    }}
+                                >
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                                        {task.title}
+                                    </Typography>
+                                    <Typography sx={{ color: 'grey' }}>
+                                        {task.description}
+                                    </Typography>
+                                    <Typography sx={{ fontSize: '10px', color: 'grey' }}>
+                                        Start Date: {task.start_date ? new Date(task.start_date).toLocaleString() : 'N/A'}
+                                    </Typography>
+                                    <Typography sx={{ fontSize: '10px', color: 'grey' }}>
+                                        Due Date: {task.end_date ? new Date(task.end_date).toLocaleString() : 'N/A'}
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Box>
+                    ) : (
+                        <Typography>No tasks created by you.</Typography>
+                    )}
+                </Box>
             </Box >
 
             <AddUpdateModal

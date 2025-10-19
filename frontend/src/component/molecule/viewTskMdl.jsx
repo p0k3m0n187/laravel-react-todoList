@@ -89,7 +89,7 @@ export default function ViewTskMdl({ open, handleClose, task, handleDeleteTask }
                             <Typography sx={valueStyle}>
                                 {task?.assigned_users && task.assigned_users.length > 0
                                     ? task.assigned_users.map(user =>
-                                        `${user.id}: ${user.firstName} ${user.lastName}`
+                                        `${user.firstName} ${user.lastName}`
                                     ).join(', ')
                                     : 'No users assigned'}
                             </Typography>

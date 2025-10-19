@@ -8,19 +8,43 @@ use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
-    // Shows task for a specific user
+    // Change this after you figure it out
+    // // Shows task for a specific user
     public function myTasks()
+    {
+        $userId = Auth::id();
+
+        $tasks = Task::where('user_id', $userId) // I created it
+            ->orWhereHas('assigned_users', function ($query) use ($userId) {
+                $query->where('user_id', $userId); // Or I was assigned
+            })
+            ->with('assigned_users') // load assigned users
+            ->get();
+
+        return response()->json($tasks);
+    }
+
+    // Shows task for a specific assigned user
+    // public function assignedTasks()
     // {
     //     $userId = Auth::id(); // Get the authenticated user's ID
-    //     $tasks = Task::where('user_id', $userId)->get(); // Fetch tasks for the authenticated user
-    //     return response()->json($tasks); // Return tasks as JSON
+    //     $tasks = Task::with('assigned_users') // Eager load assigned users
+    //         ->where('user_id', $userId)
+    //         ->get();
+    //     return response()->json($tasks); // Return tasks with assigned users as JSON
     // }
+
+    public function assignedTasks()
     {
-        $userId = Auth::id(); // Get the authenticated user's ID
-        $tasks = Task::with('assigned_users') // Eager load assigned users
-            ->where('user_id', $userId)
+        $userId = Auth::id();
+
+        $tasks = Task::whereHas('assigned_users', function ($query) use ($userId) {
+            $query->where('user_id', $userId); // pivot column
+        })
+            ->with('assigned_users')
             ->get();
-        return response()->json($tasks); // Return tasks with assigned users as JSON
+
+        return response()->json($tasks);
     }
 
     // Creates a new task
@@ -38,6 +62,8 @@ class TaskController extends Controller
             'status' => 'sometimes|required|in:pending,in_progress,completed',
             'start_date' => 'nullable|date_format:Y-m-d H:i:s', // Correct format
             'end_date' => 'nullable|date_format:Y-m-d H:i:s',   // Correct format
+            'assigned_users' => 'array', // optional: assign users on create
+            'assigned_users.*' => 'exists:users,id', // each must exist in users table
         ]);
 
         // Automatically assign the authenticated user's ID
@@ -46,10 +72,15 @@ class TaskController extends Controller
         // Create the task
         $task = Task::create($validate);
 
+        // If assigned_users is provided, attach them
+        if (!empty($request->assigned_users)) {
+            $task->assigned_users()->attach($request->assigned_users);
+        }
+
         return response()->json([
             'message' => 'Task created successfully!',
-            'task' => $task
-        ], 201);  // Return the created task with a 201 status
+            'task' => $task->load('assigned_users')
+        ], 201);
     }
 
     public function show($id)
@@ -61,24 +92,29 @@ class TaskController extends Controller
     // Updates a specific task
     public function update(Request $request, $id)
     {
-        $task = Task::findOrFail($id);  // Find the task by ID, or fail with 404
+        $task = Task::findOrFail($id);
 
-        // Validate input fields (marking user_id as optional in case it's not being updated)
         $validate = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|required|string',
             'status' => 'sometimes|required|in:pending,in_progress,completed',
-            'start_date' => 'nullable|date_format:Y-m-d\TH:i', // Allow the datetime-local format
-            'end_date' => 'nullable|date_format:Y-m-d\TH:i',   // Allow the datetime-local format
+            'start_date' => 'nullable|date_format:Y-m-d H:i:s',
+            'end_date' => 'nullable|date_format:Y-m-d H:i:s',
+            'assigned_users' => 'array',
+            'assigned_users.*' => 'exists:users,id',
         ]);
 
-        // Update the task with validated data
         $task->update($validate);
+
+        // Sync assigned users if provided
+        if ($request->has('assigned_users')) {
+            $task->assigned_users()->sync($request->assigned_users);
+        }
 
         return response()->json([
             'message' => 'Task updated successfully!',
-            'task' => $task
-        ]);  // Return updated task as JSON
+            'task' => $task->load('assigned_users')
+        ]);
     }
 
     // Deletes a specific task

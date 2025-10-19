@@ -14,6 +14,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Task Routes
     // Route::get('/tasks', [TaskController::class, 'index']); // List all tasks
+    Route::get('/assigned-tasks', [TaskController::class, 'assignedTasks']); //List assigned tasks for users
     Route::get('/my-tasks', [TaskController::class, 'myTasks']); // List created tasks
     Route::post('/tasks', [TaskController::class, 'store']); // Create a new task
     Route::get('/tasks/{id}', [TaskController::class, 'show']); // View a specific task

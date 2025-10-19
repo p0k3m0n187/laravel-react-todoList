@@ -39,7 +39,7 @@ class AssignedTaskController extends Controller
             ]);
         }
 
-        return response()->json($assignedTasks, 201); // Return the created assigned task with a 201 status
+        return response()->json(['message' => 'Users assigned successfully!', 'assignedTasks' => $assignedTasks], 201);// Return the created assigned task with a 201 status
     }
 
     // Unassigns (delete) a task from a user
